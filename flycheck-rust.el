@@ -77,8 +77,9 @@ Flycheck according to the Cargo project layout."
           ;; executable
           (setq flycheck-rust-crate-root
                 (if (file-exists-p def-lib) def-lib def-exe)))
-        ;; Check tests if the file is a test file
-        (setq flycheck-rust-check-tests (flycheck-rust-test-p rel-name))
+        ;; Check tests in libraries and integration tests
+        (setq flycheck-rust-check-tests
+              (not (flycheck-rust-executable-p rel-name)))
         ;; Set the crate type
         (setq flycheck-rust-crate-type
               (if (flycheck-rust-executable-p rel-name) "bin" "lib"))

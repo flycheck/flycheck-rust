@@ -30,16 +30,61 @@
 
 ;;;; Setup
 
-;; (add-hook 'rust-mode-hook #'flycheck-rust-setup)
+;; (add-hook 'flycheck-mode-hook #'flycheck-rust-setup)
 
 ;;; Code:
+
+(require 'dash)
+(require 'flycheck)
+
+(defun flycheck-rust-executable-p (rel-name)
+  "Whether REL-NAME denotes an executable.
+
+REL-NAME is the file relative to the Cargo.toml file."
+  (or (string= "src/main.rs" rel-name)
+      (string-prefix-p "src/bin/" rel-name)))
+
+(defun flycheck-rust-test-p (rel-name)
+  "Whether REL-NAME denotes a test.
+
+REL-NAME is the file relative to the Cargo.toml file."
+  (string-prefix-p "tests/" rel-name))
+
+(defun flycheck-rust-project-root ()
+  "Get the project root for the current buffer.
+
+Return the directory containing the Cargo file, or nil if there
+is none."
+  (locate-dominating-file (buffer-file-name) "Cargo.toml"))
 
 ;;;###autoload
 (defun flycheck-rust-setup ()
   "Setup Rust in Flycheck.
 
 If the current file is part of a Cargo project, configure
-Flycheck according to the Cargo project layout.")
+Flycheck according to the Cargo project layout."
+  (interactive)
+  (when (buffer-file-name)
+    (-when-let (root (flycheck-rust-project-root))
+      (let ((rel-name (file-relative-name (buffer-file-name) root))
+            (def-exe (expand-file-name "src/main.rs" root))
+            (def-lib (expand-file-name "src/lib.rs" root)))
+        ;; These are valid crate roots as by Cargo's layout
+        (unless (or (flycheck-rust-executable-p rel-name)
+                    (flycheck-rust-test-p rel-name)
+                    (string= "src/lib.rs" rel-name))
+          ;; For other files, the library is either the default library or the
+          ;; executable
+          (setq flycheck-rust-crate-root
+                (if (file-exists-p def-lib) def-lib def-exe)))
+        ;; Check tests if the file is a test file
+        (setq flycheck-rust-check-tests (flycheck-rust-test-p rel-name))
+        ;; Set the crate type
+        (setq flycheck-rust-crate-type
+              (if (flycheck-rust-executable-p rel-name) "bin" "lib"))
+        ;; Find build libraries
+        (setq flycheck-rust-library-path
+              (list (expand-file-name "target" root)))))))
 
 (provide 'flycheck-rust)
 

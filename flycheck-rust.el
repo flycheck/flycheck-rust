@@ -85,7 +85,8 @@ Flycheck according to the Cargo project layout."
               (if (flycheck-rust-executable-p rel-name) "bin" "lib"))
         ;; Find build libraries
         (setq flycheck-rust-library-path
-              (list (expand-file-name "target" root)))))))
+              (list (expand-file-name "target" root)
+                    (expand-file-name "target/deps" root)))))))
 
 (provide 'flycheck-rust)
 

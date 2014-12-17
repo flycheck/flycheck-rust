@@ -82,18 +82,18 @@ Flycheck according to the Cargo project layout."
                     (string= "src/lib.rs" rel-name))
           ;; For other files, the library is either the default library or the
           ;; executable
-          (setq flycheck-rust-crate-root
-                (if (file-exists-p def-lib) def-lib def-exe)))
+          (setq-local flycheck-rust-crate-root
+                      (if (file-exists-p def-lib) def-lib def-exe)))
         ;; Check tests in libraries and integration tests
-        (setq flycheck-rust-check-tests
-              (not (flycheck-rust-executable-p rel-name)))
+        (setq-local flycheck-rust-check-tests
+                    (not (flycheck-rust-executable-p rel-name)))
         ;; Set the crate type
-        (setq flycheck-rust-crate-type
-              (if (flycheck-rust-executable-p rel-name) "bin" "lib"))
+        (setq-local flycheck-rust-crate-type
+                    (if (flycheck-rust-executable-p rel-name) "bin" "lib"))
         ;; Find build libraries
-        (setq flycheck-rust-library-path
-              (list (expand-file-name "target" root)
-                    (expand-file-name "target/deps" root)))))))
+        (setq-local flycheck-rust-library-path
+                    (list (expand-file-name "target" root)
+                          (expand-file-name "target/deps" root)))))))
 
 (provide 'flycheck-rust)
 

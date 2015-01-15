@@ -56,6 +56,12 @@ REL-NAME is the file relative to the Cargo.toml file."
 REL-NAME is the file relative to the Cargo.toml file."
   (string-prefix-p "benches/" rel-name))
 
+(defun flycheck-rust-example-p (rel-name)
+  "Whether REL-NAME denotes an example.
+
+REL-NAME is the file relative to the Cargo.toml file."
+  (string-prefix-p "examples/" rel-name))
+
 (defun flycheck-rust-project-root ()
   "Get the project root for the current buffer.
 
@@ -79,6 +85,7 @@ Flycheck according to the Cargo project layout."
         (unless (or (flycheck-rust-executable-p rel-name)
                     (flycheck-rust-test-p rel-name)
                     (flycheck-rust-bench-p rel-name)
+                    (flycheck-rust-example-p rel-name)
                     (string= "src/lib.rs" rel-name))
           ;; For other files, the library is either the default library or the
           ;; executable

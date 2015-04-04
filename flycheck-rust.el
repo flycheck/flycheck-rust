@@ -1,6 +1,6 @@
 ;;; flycheck-rust.el --- Flycheck: Rust additions and Cargo support  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2014  Sebastian Wiesner <swiesner@lunaryorn.com>
+;; Copyright (C) 2014, 2015  Sebastian Wiesner <swiesner@lunaryorn.com>
 
 ;; Author: Sebastian Wiesner <swiesner@lunaryorn.com>
 ;; URL: https://github.com/flycheck/flycheck-rust
@@ -99,8 +99,8 @@ Flycheck according to the Cargo project layout."
                     (if (flycheck-rust-executable-p rel-name) "bin" "lib"))
         ;; Find build libraries
         (setq-local flycheck-rust-library-path
-                    (list (expand-file-name "target" root)
-                          (expand-file-name "target/deps" root)))))))
+                    (list (expand-file-name "target/debug" root)
+                          (expand-file-name "target/debug/deps" root)))))))
 
 (provide 'flycheck-rust)
 

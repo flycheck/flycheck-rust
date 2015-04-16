@@ -73,9 +73,9 @@ is none."
   "Get the crate root (the nearest lib.rs or main.rs)
 relative to the current file."
   (-if-let (lib-crate-dir (locate-dominating-file (buffer-file-name) "lib.rs"))
-      (concat lib-crate-dir "lib.rs")
+      (expand-file-name "lib.rs" lib-crate-dir)
     (-when-let (exe-crate-dir (locate-dominating-file (buffer-file-name) "main.rs"))
-      (concat exe-crate-dir "main.rs"))))
+      (expand-file-name "main.rs" exe-crate-dir))))
 
 ;;;###autoload
 (defun flycheck-rust-setup ()
@@ -95,8 +95,7 @@ Flycheck according to the Cargo project layout."
                     (string= "src/lib.rs" rel-name))
           ;; For other files, the library is either the default library or the
           ;; executable
-          (setq-local flycheck-rust-crate-root
-                      (expand-file-name (flycheck-rust-find-crate-root))))
+          (setq-local flycheck-rust-crate-root (flycheck-rust-find-crate-root)))
         ;; Check tests in libraries and integration tests
         (setq-local flycheck-rust-check-tests
                     (not (flycheck-rust-executable-p rel-name)))

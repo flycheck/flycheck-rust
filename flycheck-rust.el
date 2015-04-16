@@ -69,6 +69,14 @@ Return the directory containing the Cargo file, or nil if there
 is none."
   (locate-dominating-file (buffer-file-name) "Cargo.toml"))
 
+(defun flycheck-rust-find-crate-root ()
+  "Get the crate root (the nearest lib.rs or main.rs)
+relative to the current file."
+  (-if-let (lib-crate-dir (locate-dominating-file (buffer-file-name) "lib.rs"))
+      (concat lib-crate-dir "lib.rs")
+    (-when-let (exe-crate-dir (locate-dominating-file (buffer-file-name) "main.rs"))
+      (concat exe-crate-dir "main.rs"))))
+
 ;;;###autoload
 (defun flycheck-rust-setup ()
   "Setup Rust in Flycheck.
@@ -78,9 +86,7 @@ Flycheck according to the Cargo project layout."
   (interactive)
   (when (buffer-file-name)
     (-when-let (root (flycheck-rust-project-root))
-      (let ((rel-name (file-relative-name (buffer-file-name) root))
-            (def-exe (expand-file-name "src/main.rs" root))
-            (def-lib (expand-file-name "src/lib.rs" root)))
+      (let ((rel-name (file-relative-name (buffer-file-name) root)))
         ;; These are valid crate roots as by Cargo's layout
         (unless (or (flycheck-rust-executable-p rel-name)
                     (flycheck-rust-test-p rel-name)
@@ -90,7 +96,7 @@ Flycheck according to the Cargo project layout."
           ;; For other files, the library is either the default library or the
           ;; executable
           (setq-local flycheck-rust-crate-root
-                      (if (file-exists-p def-lib) def-lib def-exe)))
+                      (expand-file-name (flycheck-rust-find-crate-root))))
         ;; Check tests in libraries and integration tests
         (setq-local flycheck-rust-check-tests
                     (not (flycheck-rust-executable-p rel-name)))

@@ -24,8 +24,7 @@ In your [`Cask`][cask] file:
 In your `init.el`:
 
 ```cl
-(eval-after-load 'flycheck
-  '(add-hook 'flycheck-mode-hook #'flycheck-rust-setup))
+(add-hook 'flycheck-mode-hook #'flycheck-rust-setup)
 ```
 
 Usage

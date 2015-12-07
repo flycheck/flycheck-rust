@@ -85,6 +85,15 @@ relative to the current file."
     (-when-let (exe-crate-dir (locate-dominating-file (buffer-file-name) "main.rs"))
       (expand-file-name "main.rs" exe-crate-dir))))
 
+(defun flycheck-rust-binary-crate-p (crate-root)
+  "Determine whether CRATE-ROOT is a binary crate.
+
+CRATE-ROOT is the path to the root module of a crate.
+
+Return non-nil if CRATE-ROOT is a binary crate, nil otherwise."
+  (let ((root-dir (file-name-directory crate-root)))
+    (file-exists-p (expand-file-name "src/main.rs" root-dir))))
+
 ;;;###autoload
 (defun flycheck-rust-setup ()
   "Setup Rust in Flycheck.
@@ -109,7 +118,8 @@ Flycheck according to the Cargo project layout."
                     (not (flycheck-rust-executable-p rel-name)))
         ;; Set the crate type
         (setq-local flycheck-rust-crate-type
-                    (if (flycheck-rust-executable-p rel-name) "bin" "lib"))
+                    (if (flycheck-rust-binary-crate-p flycheck-rust-crate-root)
+                        "bin" "lib"))
         ;; Find build libraries
         (setq-local flycheck-rust-library-path
                     (list (expand-file-name "target/debug" root)

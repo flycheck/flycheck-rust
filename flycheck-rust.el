@@ -109,9 +109,10 @@ Flycheck according to the Cargo project layout."
                     (not (flycheck-rust-executable-p rel-name)))
         ;; Set the crate type
         (setq-local flycheck-rust-crate-type
-                    (if
-                        (file-exists-p
-                         (expand-file-name "src/main.rs" flycheck-rust-crate-root))
+                    (if (file-exists-p
+                         (expand-file-name
+                          "src/main.rs"
+                          (file-name-directory flycheck-rust-crate-root)))
                         "bin" "lib"))
         ;; Find build libraries
         (setq-local flycheck-rust-library-path

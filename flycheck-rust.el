@@ -99,27 +99,32 @@ Return non-nil if PROJECT-ROOT is a binary crate, nil otherwise."
   "Find and return the cargo target associated with the given file.
 
 FILE-NAME is the name of the file that is matched against the
-'src_path' value in the list 'targets' returned by 'cargo
+`src_path' value in the list `targets' returned by `cargo
 read-manifest'.  If there is no match, the first target is
 returned by default.
 
 Return a cons cell (TYPE . NAME), where TYPE is the target
 type (lib or bin), and NAME the target name (usually, the crate
 name)."
-  (let* ((manifest (let ((json-array-type 'list))
-                     (json-read-from-string
-                      (shell-command-to-string "cargo read-manifest"))))
-         (default-target (cadr (assq 'targets manifest)))
-         ;; Assuming there is always at least one target
-         (target-type (cadr (assq 'kind default-target)))
-         (target-name (cdr (assq 'name default-target))))
-    ;; If there is a target that matches the file-name exactly, pick that one
-    ;; instead
-    (dolist (target (cdr (assq 'targets manifest)))
-      (when (string= file-name (cdr (assq 'src_path target)))
-        (setq target-type (cadr (assq 'kind target)))
-        (setq target-name (cdr (assq 'name target)))))
-    (cons target-type target-name)))
+  (let ((target-type)
+        (target-name)
+        (json-array-type 'list))
+    (let-alist (with-temp-buffer
+                 (call-process "cargo" nil t nil "read-manifest")
+                 (goto-char (point-min))
+                 (json-read))
+      ;; Assuming there is always at least one target
+      (let-alist (car .targets)
+        (setq target-type (car .kind))
+        (setq target-name .name))
+      ;; If there is a target that matches the file-name exactly, pick that one
+      ;; instead
+      (dolist (target .targets)
+        (let-alist target
+          (when (string= file-name .src_path)
+            (setq target-type (car .kind))
+            (setq target-name .name))))
+      (cons target-type target-name))))
 
 ;;;###autoload
 (defun flycheck-rust-setup ()

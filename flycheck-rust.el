@@ -6,7 +6,7 @@
 ;; URL: https://github.com/flycheck/flycheck-rust
 ;; Keywords: tools, convenience
 ;; Version: 0.1-cvs
-;; Package-Requires: ((emacs "24.1") (flycheck "0.20") (dash "2.4.0"))
+;; Package-Requires: ((emacs "24.1") (flycheck "0.20") (dash "2.4.0") (seq "2.15"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -44,6 +44,7 @@
 
 (require 'dash)
 (require 'flycheck)
+(require 'seq)
 (require 'json)
 
 (defun flycheck-rust-executable-p (rel-name)
@@ -106,25 +107,18 @@ returned by default.
 Return a cons cell (TYPE . NAME), where TYPE is the target
 type (lib or bin), and NAME the target name (usually, the crate
 name)."
-  (let ((target-type)
-        (target-name)
-        (json-array-type 'list))
+  (let ((json-array-type 'list))
     (let-alist (with-temp-buffer
                  (call-process "cargo" nil t nil "read-manifest")
                  (goto-char (point-min))
                  (json-read))
-      ;; Assuming there is always at least one target
-      (let-alist (car .targets)
-        (setq target-type (car .kind))
-        (setq target-name .name))
-      ;; If there is a target that matches the file-name exactly, pick that one
-      ;; instead
-      (dolist (target .targets)
-        (let-alist target
-          (when (string= file-name .src_path)
-            (setq target-type (car .kind))
-            (setq target-name .name))))
-      (cons target-type target-name))))
+      (let ((targets .targets))
+        ;; If there is a target that matches the file-name exactly, pick that
+        ;; one.  Otherwise, just pick the first target.
+        (let-alist (seq-find (lambda (target)
+                               (let-alist target (string= file-name .src_path)))
+                             targets (car targets))
+          (cons (car .kind) .name))))))
 
 ;;;###autoload
 (defun flycheck-rust-setup ()
@@ -135,8 +129,9 @@ Flycheck according to the Cargo project layout."
   (interactive)
   (when (buffer-file-name)
     (-when-let (root (flycheck-rust-project-root))
-      (let ((rel-name (file-relative-name (buffer-file-name) root))
-            (target (flycheck-rust-find-target (buffer-file-name))))
+      (pcase-let ((rel-name (file-relative-name (buffer-file-name) root))
+                  (`(,target-type . ,target-name) (flycheck-rust-find-target
+                                                     (buffer-file-name))))
         ;; These are valid crate roots as by Cargo's layout
         (if (or (flycheck-rust-executable-p rel-name)
                 (flycheck-rust-test-p rel-name)
@@ -152,12 +147,11 @@ Flycheck according to the Cargo project layout."
                     (not (flycheck-rust-executable-p rel-name)))
         ;; Set the crate type
         (setq-local flycheck-rust-crate-type
-                    (if (string= (car target) "bin")
+                    (if (string= target-type "bin")
                         (progn
                           ;; If it's binary target, we need to pass the binary
                           ;; name
-                          (setq-local flycheck-rust-binary-name
-                                      (cdr target))
+                          (setq-local flycheck-rust-binary-name target-name)
                           "bin")
                       "lib"))
         ;; Find build libraries

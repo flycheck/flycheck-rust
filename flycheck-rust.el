@@ -170,8 +170,7 @@ Flycheck according to the Cargo project layout."
 ERROR-CODE defaults to the code of the error under point."
   (interactive
    (list (let ((errors-at-point (flycheck-overlay-errors-at (point))))
-           (when (> (length errors-at-point) 0)
-             (flycheck-error-id (car errors-at-point))))))
+           (and errors-at-point (flycheck-error-id (car errors-at-point))))))
   (when error-code
     (with-help-window (get-buffer-create "*rustc-explain*")
       (with-current-buffer standard-output

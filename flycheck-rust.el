@@ -6,7 +6,7 @@
 ;; URL: https://github.com/flycheck/flycheck-rust
 ;; Keywords: tools, convenience
 ;; Version: 0.1-cvs
-;; Package-Requires: ((emacs "24.1") (flycheck "0.20") (dash "2.4.0") (seq "2.15") (let-alist "1.0.4"))
+;; Package-Requires: ((emacs "24.1") (flycheck "0.20") (dash "2.13.0") (seq "2.15"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -112,17 +112,19 @@ Return a cons cell (TYPE . NAME), where TYPE is the target
 type (lib or bin), and NAME the target name (usually, the crate
 name)."
   (let ((json-array-type 'list))
-    (let-alist (with-temp-buffer
-                 (call-process "cargo" nil t nil "read-manifest")
-                 (goto-char (point-min))
-                 (json-read))
-      (let ((targets .targets))
-        ;; If there is a target that matches the file-name exactly, pick that
-        ;; one.  Otherwise, just pick the first target.
-        (let-alist (seq-find (lambda (target)
-                               (let-alist target (string= file-name .src_path)))
-                             targets (car targets))
-          (cons (car .kind) .name))))))
+    (-let [(&alist 'targets targets)
+           (with-temp-buffer
+             (call-process "cargo" nil t nil "read-manifest")
+             (goto-char (point-min))
+             (json-read))]
+      ;; If there is a target that matches the file-name exactly, pick that
+      ;; one.  Otherwise, just pick the first target.
+      (-let [(&alist 'kind (kind) 'name name)
+             (seq-find (lambda (target)
+                         (-let [(&alist 'src_path src_path) target]
+                           (string= file-name src_path)))
+                       targets (first targets))]
+          (cons kind name)))))
 
 ;;;###autoload
 (defun flycheck-rust-setup ()

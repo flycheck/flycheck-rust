@@ -176,6 +176,9 @@ ERROR-CODE defaults to the code of the error under point."
       (with-current-buffer standard-output
         (call-process "rustc" nil t nil "--explain" error-code)))))
 
+;; Add a binding for explaining errors under the default flycheck prefix.
+(define-key flycheck-command-map "r" #'flycheck-rust-explain-error)
+
 (provide 'flycheck-rust)
 
 ;;; flycheck-rust.el ends here

@@ -123,7 +123,7 @@ name)."
              (seq-find (lambda (target)
                          (-let [(&alist 'src_path src_path) target]
                            (string= file-name src_path)))
-                       targets (first targets))]
+                       targets (car targets))]
           (cons kind name)))))
 
 ;;;###autoload

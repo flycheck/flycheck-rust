@@ -114,7 +114,7 @@ name)."
   (let ((json-array-type 'list))
     (-let [(&alist 'targets targets)
            (with-temp-buffer
-             (call-process "cargo" nil t nil "read-manifest")
+             (call-process (funcall flycheck-executable-find "cargo") nil t nil "read-manifest")
              (goto-char (point-min))
              (json-read))]
       ;; If there is a target that matches the file-name exactly, pick that

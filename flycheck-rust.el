@@ -35,10 +35,6 @@
 ;; # Usage
 ;;
 ;; Just use Flycheck as usual in your Rust/Cargo projects.
-;;
-;; Note: You must run `cargo build` initially to install all dependencies.  If
-;; you add new dependencies to `Cargo.toml` you need to run `cargo build`
-;; again. Otherwise you will see spurious errors about missing crates.
 
 ;;; Code:
 
@@ -47,86 +43,107 @@
 (require 'seq)
 (require 'json)
 
-(defun flycheck-rust-executable-p (rel-name)
-  "Whether REL-NAME denotes an executable.
+(defun flycheck-rust-find-manifest (file-name)
+  "Get the Cargo.toml manifest for FILE-NAME.
 
-REL-NAME is the file relative to the Cargo.toml file."
-  (or (string= "src/main.rs" rel-name)
-      (string-prefix-p "src/bin/" rel-name)))
+FILE-NAME is the path of a file in a cargo project given as a
+string.
 
-(defun flycheck-rust-test-p (rel-name)
-  "Whether REL-NAME denotes a test.
+See http://doc.crates.io/guide.html for an introduction to the
+Cargo.toml manifest.
 
-REL-NAME is the file relative to the Cargo.toml file."
-  (string-prefix-p "tests/" rel-name))
+Return the path to the Cargo.toml manifest file, or nil if the
+manifest could not be located."
+  (-when-let (root-dir (locate-dominating-file file-name "Cargo.toml"))
+    (expand-file-name "Cargo.toml" root-dir)))
 
-(defun flycheck-rust-bench-p (rel-name)
-  "Whether REL-NAME denotes a bench.
+(defun flycheck-rust-dirs-list (start end)
+  "Return a list of directories from START (inclusive) to END (exclusive).
 
-REL-NAME is the file relative to the Cargo.toml file."
-  (string-prefix-p "benches/" rel-name))
+E.g., if START is '/a/b/c/d' and END is '/a', return the list
+'(/a/b/c/d /a/b/c /a/b) in this order.
 
-(defun flycheck-rust-example-p (rel-name)
-  "Whether REL-NAME denotes an example.
+START and END are strings representing file paths.  END should be
+above START in the file hierarchy; if not, the list stops at the
+root of the file hierarchy."
+  (let ((dirlist)
+        (dir (expand-file-name start))
+        (end (expand-file-name end)))
+    (while (not (or (equal dir (car dirlist)) ; avoid infinite loop
+                    (file-equal-p dir end)))
+      (push dir dirlist)
+      (setq dir (directory-file-name (file-name-directory dir))))
+    (nreverse dirlist)))
 
-REL-NAME is the file relative to the Cargo.toml file."
-  (string-prefix-p "examples/" rel-name))
+(defun flycheck-rust-get-cargo-targets (manifest)
+  "Return the list of available Cargo targets for the given project.
 
-(defun flycheck-rust-project-root ()
-  "Get the project root for the current buffer.
+MANIFEST is the path to the Cargo.toml file of the project.
 
-Return the directory containing the Cargo file, or nil if there
-is none."
-  (locate-dominating-file (buffer-file-name) "Cargo.toml"))
-
-(defun flycheck-rust-find-crate-root ()
-  "Get the crate root (the nearest lib.rs or main.rs)
-relative to the current file."
-  (-if-let (lib-crate-dir (locate-dominating-file (buffer-file-name) "lib.rs"))
-      (expand-file-name "lib.rs" lib-crate-dir)
-    (-when-let (exe-crate-dir (locate-dominating-file (buffer-file-name) "main.rs"))
-      (expand-file-name "main.rs" exe-crate-dir))))
-
-(defun flycheck-rust-binary-crate-p (project-root)
-  "Determine whether PROJECT-ROOT is a binary crate.
-
-PROJECT-ROOT is the path to the root directory of the project.
-
-Return non-nil if PROJECT-ROOT is a binary crate, nil otherwise."
-  (let ((root-dir (file-name-directory project-root)))
-    (file-exists-p (expand-file-name "src/main.rs" root-dir))))
-
-(defun flycheck-rust-find-target (file-name)
-  "Find and return the cargo target associated with the given file.
-
-FILE-NAME is the name of the file that is matched against the
-`src_path' value in the list `targets' returned by `cargo
-read-manifest'.  If there is no match, the first target is
-returned by default.
-
-Return a cons cell (TYPE . NAME), where TYPE is the target
-type (lib or bin), and NAME the target name (usually, the crate
-name)."
-  (let ((json-array-type 'list)
-        (cargo (funcall flycheck-executable-find "cargo")))
+Calls `cargo metadata --no-deps --manifest MANIFEST', parses and
+collects the targets for the current workspace, and returns them
+in a list, or nil if no targets could be found."
+  (let ((cargo (funcall flycheck-executable-find "cargo")))
     (unless cargo
       (user-error "flycheck-rust cannot find `cargo'.  Please \
 make sure that cargo is installed and on your PATH.  See \
 http://www.flycheck.org/en/latest/user/troubleshooting.html for \
 more information on setting your PATH with Emacs."))
-    (-let [(&alist 'targets targets)
-           (with-temp-buffer
-             (call-process cargo nil t nil "read-manifest")
-             (goto-char (point-min))
-             (json-read))]
-      ;; If there is a target that matches the file-name exactly, pick that
-      ;; one.  Otherwise, just pick the first target.
-      (-let [(&alist 'kind (kind) 'name name)
-             (seq-find (lambda (target)
-                         (-let [(&alist 'src_path src_path) target]
-                           (string= file-name src_path)))
-                       targets (car targets))]
-          (cons kind name)))))
+    ;; metadata contains a list of packages, and each package has a list of
+    ;; targets.  We concatenate all targets, regardless of the package.
+    (when-let ((packages (let-alist
+                             (with-temp-buffer
+                               (call-process cargo nil t nil
+                                             "metadata" "--no-deps"
+                                             "--manifest-path" manifest)
+                               (goto-char (point-min))
+                               (let ((json-array-type 'list))
+                                 (json-read)))
+                           .packages)))
+      (seq-mapcat (lambda (pkg)
+                    (let-alist pkg .targets))
+                  packages))))
+
+(defun flycheck-rust-find-cargo-target (file-name)
+  "Return the Cargo build target associated with FILE-NAME.
+
+FILE-NAME is the path of the file that is matched against the
+`src_path' value in the list of `targets' returned by `cargo
+read-manifest'.
+
+Return a cons cell (KIND . NAME) where KIND is the target
+kind (lib, bin, test, example or bench), and NAME the target
+name (usually, the crate name).  If FILE-NAME exactly matches a
+target `src-path', this target is returned.  Otherwise, return
+the closest matching target, or nil if no targets could be found.
+
+See http://doc.crates.io/manifest.html#the-project-layout for a
+description of the conventional Cargo project layout."
+  (-when-let* ((manifest (flycheck-rust-find-manifest file-name))
+               (targets (flycheck-rust-get-cargo-targets manifest)))
+    (let ((target
+           (or
+            ;; If there is a target that matches the file-name exactly, pick
+            ;; that one
+            (seq-find (lambda (target)
+                        (let-alist target (string= file-name .src_path)))
+                      targets)
+            ;; Otherwise find the closest matching target by walking up the tree
+            ;; from FILE-NAME and looking for targets in each directory.  E.g.,
+            ;; the file 'tests/common/a.rs' will look for a target in
+            ;; 'tests/common', then in 'tests/', etc.
+            (car (seq-find
+                  (lambda (pair)
+                    (-let [((&alist 'src_path target-path) . dir) pair]
+                      (file-equal-p dir (file-name-directory target-path))))
+                  ;; build a list of (target . dir) candidates
+                  (-table-flat
+                   'cons targets
+                   (flycheck-rust-dirs-list file-name
+                                            (file-name-directory manifest)))))
+            ;; If all else fails, just pick the first target
+            (car targets))))
+      (let-alist target (cons (car .kind) .name)))))
 
 ;;;###autoload
 (defun flycheck-rust-setup ()
@@ -139,37 +156,10 @@ Flycheck according to the Cargo project layout."
   ;; with `global-flycheck-mode' it will render Emacs unusable (see
   ;; https://github.com/flycheck/flycheck-rust/issues/40#issuecomment-253760883).
   (with-demoted-errors "Error in flycheck-rust-setup: %S"
-    (when (buffer-file-name)
-      (-when-let (root (flycheck-rust-project-root))
-        (pcase-let ((rel-name (file-relative-name (buffer-file-name) root))
-                    (`(,target-type . ,target-name) (flycheck-rust-find-target
-                                                     (buffer-file-name))))
-          ;; These are valid crate roots as by Cargo's layout
-          (if (or (flycheck-rust-executable-p rel-name)
-                  (flycheck-rust-test-p rel-name)
-                  (flycheck-rust-bench-p rel-name)
-                  (flycheck-rust-example-p rel-name)
-                  (string= "src/lib.rs" rel-name))
-              (setq-local flycheck-rust-crate-root rel-name)
-            ;; For other files, the library is either the default library or the
-            ;; executable
-            (setq-local flycheck-rust-crate-root (flycheck-rust-find-crate-root)))
-          ;; Check tests in libraries and integration tests
-          (setq-local flycheck-rust-check-tests
-                      (not (flycheck-rust-executable-p rel-name)))
-          ;; Set the crate type
-          (setq-local flycheck-rust-crate-type
-                      (if (string= target-type "bin")
-                          (progn
-                            ;; If it's binary target, we need to pass the binary
-                            ;; name
-                            (setq-local flycheck-rust-binary-name target-name)
-                            "bin")
-                        "lib"))
-          ;; Find build libraries
-          (setq-local flycheck-rust-library-path
-                      (list (expand-file-name "target/debug" root)
-                            (expand-file-name "target/debug/deps" root))))))))
+    (-when-let* ((file-name (buffer-file-name))
+                 ((kind . name) (flycheck-rust-find-cargo-target file-name)))
+      (setq-local flycheck-rust-crate-type kind)
+      (setq-local flycheck-rust-binary-name name))))
 
 (provide 'flycheck-rust)
 

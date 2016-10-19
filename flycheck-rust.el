@@ -107,10 +107,16 @@ returned by default.
 Return a cons cell (TYPE . NAME), where TYPE is the target
 type (lib or bin), and NAME the target name (usually, the crate
 name)."
-  (let ((json-array-type 'list))
+  (let ((json-array-type 'list)
+        (cargo (funcall flycheck-executable-find "cargo")))
+    (unless cargo
+      (user-error "flycheck-rust cannot find `cargo'.  Please \
+make sure that cargo is installed and on your PATH.  See \
+http://www.flycheck.org/en/latest/user/troubleshooting.html for \
+more information on setting your PATH with Emacs."))
     (-let [(&alist 'targets targets)
            (with-temp-buffer
-             (call-process (funcall flycheck-executable-find "cargo") nil t nil "read-manifest")
+             (call-process cargo nil t nil "read-manifest")
              (goto-char (point-min))
              (json-read))]
       ;; If there is a target that matches the file-name exactly, pick that
@@ -129,17 +135,12 @@ name)."
 If the current file is part of a Cargo project, configure
 Flycheck according to the Cargo project layout."
   (interactive)
-  (when (buffer-file-name)
-    (-when-let (root (flycheck-rust-project-root))
-      ;; We should avoid raising any error in this function, as in combination
-      ;; with `global-flycheck-mode' it will render Emacs unusable (see
-      ;; https://github.com/flycheck/flycheck-rust/issues/40#issuecomment-253760883).
-      (if (not (funcall flycheck-executable-find "cargo"))
-          ;; We can still inform the user though
-          (message "flycheck-rust cannot find `cargo'.  Please \
-make sure that cargo is installed and on your PATH.  See \
-http://www.flycheck.org/en/latest/user/troubleshooting.html for \
-more information on setting your PATH with Emacs.")
+  ;; We should avoid raising any error in this function, as in combination
+  ;; with `global-flycheck-mode' it will render Emacs unusable (see
+  ;; https://github.com/flycheck/flycheck-rust/issues/40#issuecomment-253760883).
+  (with-demoted-errors "Error in flycheck-rust-setup: %S"
+    (when (buffer-file-name)
+      (-when-let (root (flycheck-rust-project-root))
         (pcase-let ((rel-name (file-relative-name (buffer-file-name) root))
                     (`(,target-type . ,target-name) (flycheck-rust-find-target
                                                      (buffer-file-name))))

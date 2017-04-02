@@ -94,7 +94,7 @@ more information on setting your PATH with Emacs."))
     ;; targets.  We concatenate all targets, regardless of the package.
     (-when-let (packages (let-alist
                              (with-temp-buffer
-                               (call-process cargo nil t nil
+                               (call-process cargo nil '(t nil) nil
                                              "metadata" "--no-deps"
                                              "--manifest-path" manifest
                                              "--format-version" "1")

@@ -80,9 +80,10 @@ root of the file hierarchy."
 
 MANIFEST is the path to the Cargo.toml file of the project.
 
-Calls `cargo metadata --no-deps --manifest MANIFEST', parses and
-collects the targets for the current workspace, and returns them
-in a list, or nil if no targets could be found."
+Calls `cargo metadata --no-deps --manifest-path MANIFEST
+--format-version 1', parses and collects the targets for the
+current workspace, and returns them in a list, or nil if no
+targets could be found."
   (let ((cargo (funcall flycheck-executable-find "cargo")))
     (unless cargo
       (user-error "flycheck-rust cannot find `cargo'.  Please \
@@ -95,7 +96,8 @@ more information on setting your PATH with Emacs."))
                              (with-temp-buffer
                                (call-process cargo nil t nil
                                              "metadata" "--no-deps"
-                                             "--manifest-path" manifest)
+                                             "--manifest-path" manifest
+                                             "--format-version" "1")
                                (goto-char (point-min))
                                (let ((json-array-type 'list))
                                  (json-read)))

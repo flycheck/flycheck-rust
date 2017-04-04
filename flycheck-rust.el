@@ -6,7 +6,7 @@
 ;; URL: https://github.com/flycheck/flycheck-rust
 ;; Keywords: tools, convenience
 ;; Version: 0.1-cvs
-;; Package-Requires: ((emacs "24.1") (flycheck "0.20") (dash "2.13.0") (seq "2.15"))
+;; Package-Requires: ((emacs "24.1") (flycheck "0.20") (dash "2.13.0") (seq "2.15") (let-alist "1.0.4"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -42,6 +42,7 @@
 (require 'flycheck)
 (require 'seq)
 (require 'json)
+(require 'let-alist)
 
 (defun flycheck-rust-find-manifest (file-name)
   "Get the Cargo.toml manifest for FILE-NAME.

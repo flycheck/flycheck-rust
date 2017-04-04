@@ -38,11 +38,14 @@
 
 ;;; Code:
 
+(eval-when-compile
+  (require 'pcase)
+  (require 'let-alist))
+
 (require 'dash)
 (require 'flycheck)
 (require 'seq)
 (require 'json)
-(require 'let-alist)
 
 (defun flycheck-rust-find-manifest (file-name)
   "Get the Cargo.toml manifest for FILE-NAME.
@@ -146,7 +149,26 @@ description of the conventional Cargo project layout."
                                             (file-name-directory manifest)))))
             ;; If all else fails, just pick the first target
             (car targets))))
-      (let-alist target (cons (car .kind) .name)))))
+      (let-alist target (cons (flycheck-rust-normalize-target-kind .kind) .name)))))
+
+(defun flycheck-rust-normalize-target-kind (kinds)
+  "Return the normalized target name from KIND.
+
+KIND is a list of target name as returned by `cargo metadata',
+which do not necessarily correspond to to target names that can
+be passed as argument to `cargo rustc'.
+
+The normalization returns a valid cargo target based on KINDS."
+  ;; Assumption: we only care about the first kind name.  Multiple kinds only
+  ;; seem to happen for library crate types, and those all maps to the same
+  ;; `lib' target.
+  (pcase (car kinds)
+    (`"dylib" "lib")
+    (`"rlib" "lib")
+    (`"staticlib" "lib")
+    (`"cdylib" "lib")
+    (`"proc-macro" "lib")
+    (_ (car kinds))))
 
 ;;;###autoload
 (defun flycheck-rust-setup ()

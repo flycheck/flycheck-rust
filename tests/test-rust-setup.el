@@ -35,6 +35,9 @@
 (defun crate-file (file-name)
   (expand-file-name file-name "tests/test-crate"))
 
+(defun lib-crate-file (file-name)
+  (expand-file-name file-name "tests/custom-lib-target"))
+
 (describe
  "`flycheck-rust-find-cargo-target' associates"
 
@@ -107,4 +110,9 @@
      (expect
       (flycheck-rust-find-cargo-target (crate-file "benches/support/mod.rs"))
       :to-equal-one-of '("bench" . "a") '("bench" . "b")))
+
+ (it "'src/lib.rs' to the library target"
+     (expect
+      (car (flycheck-rust-find-cargo-target (lib-crate-file "src/lib.rs")))
+      :to-equal "lib"))
  )

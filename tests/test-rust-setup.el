@@ -63,10 +63,10 @@
       (flycheck-rust-find-cargo-target (crate-file "src/bin/b.rs"))
       :to-equal '("bin" . "b")))
 
- (it "'src/bin/support/mod.rs' to the 'b' binary target"
+ (it "'src/bin/support/mod.rs' to any binary target"
      (expect
       (flycheck-rust-find-cargo-target (crate-file "src/bin/support/mod.rs"))
-      :to-equal '("bin" . "b")))
+      :to-equal-one-of '("bin". "a") '("bin". "b")))
 
  (it "'tests/a.rs' to the 'a' test target"
      (expect

@@ -1,6 +1,6 @@
 ;;; test-rust-setup.el -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2016 fmdkdd
+;; Copyright (C) 2016, 2017 fmdkdd
 
 ;; Author: fmdkdd
 

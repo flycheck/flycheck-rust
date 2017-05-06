@@ -187,6 +187,9 @@ Flycheck according to the Cargo project layout."
       (setq-local flycheck-rust-crate-type kind)
       (setq-local flycheck-rust-binary-name name))))
 
+;; Add a binding for explaining errors under the default flycheck prefix.
+(define-key flycheck-command-map "r" #'flycheck-rust-explain-error)
+
 (provide 'flycheck-rust)
 
 ;;; flycheck-rust.el ends here

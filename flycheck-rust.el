@@ -7,7 +7,7 @@
 ;; URL: https://github.com/flycheck/flycheck-rust
 ;; Keywords: tools, convenience
 ;; Version: 0.1-cvs
-;; Package-Requires: ((emacs "24.1") (flycheck "0.20") (dash "2.13.0") (seq "2.15") (let-alist "1.0.4"))
+;; Package-Requires: ((emacs "24.1") (flycheck "28") (dash "2.13.0") (seq "2.3") (let-alist "1.0.4"))
 
 ;; This file is not part of GNU Emacs.
 

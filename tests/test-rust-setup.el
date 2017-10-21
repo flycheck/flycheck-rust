@@ -26,11 +26,14 @@
 ;;; Code:
 
 (require 'flycheck-rust)
+(require 'buttercup)
 
 (buttercup-define-matcher :to-equal-one-of (elt &rest seq)
-  (if (member elt seq)
-      (cons t (format "Expected %S not to equal a member of %S" elt seq))
-    (cons nil (format "Expected %S to equal a member of %S" elt seq))))
+  (let ((elt (funcall elt))
+        (seq (mapcar #'funcall seq)))
+    (if (member elt seq)
+        (cons t (format "Expected %S not to equal a member of %S" elt seq))
+      (cons nil (format "Expected %S to equal a member of %S" elt seq)))))
 
 (defun crate-file (file-name)
   (expand-file-name file-name "tests/test-crate"))
@@ -111,7 +114,7 @@
       (flycheck-rust-find-cargo-target (crate-file "benches/support/mod.rs"))
       :to-equal-one-of '("bench" . "a") '("bench" . "b")))
 
- (it "'src/lib.rs' to the library target"
+ (it "'src/lib.rs' to the library target (custom-lib-target)"
      (expect
       (car (flycheck-rust-find-cargo-target (lib-crate-file "src/lib.rs")))
       :to-equal "lib"))

@@ -1,6 +1,7 @@
 flycheck-rust — Flycheck for Rust
 =================================
 
+[![Build Status](https://travis-ci.org/flycheck/flycheck-rust.svg?branch=master)](https://travis-ci.org/flycheck/flycheck-rust)
 [![License GPL 3][badge-license]][copying]
 
 Configure [Flycheck][] for Rust.

@@ -1,0 +1,43 @@
+language: rust
+rust:
+  - stable
+  - beta
+  - nightly
+
+sudo: required
+dist: trusty
+
+matrix:
+  # Don’t wait for jobs that are allowed to fail
+  fast_finish: true
+  # Allow snapshot to fail
+  allow_failures:
+    - env: EMACS_VERSION=snapshot
+    - rust: nightly
+
+cache:
+  - directories:
+      # Cache stable Emacs binaries
+      - "$HOME/emacs/"
+      # Cache Flycheck dependencies
+      - ".cask/"
+      # Cache Cask bootstrap dependencies
+      - "$HOME/.emacs.d/.cask"
+
+env:
+  matrix:
+    - EMACS_VERSION=24.5
+    - EMACS_VERSION=25.3
+    - EMACS_VERSION=snapshot
+
+before_install:
+  - wget 'https://raw.githubusercontent.com/flycheck/emacs-travis/master/emacs-travis.mk'
+  - make -f emacs-travis.mk install_emacs
+  - make -f emacs-travis.mk install_cask
+  - emacs --version
+
+install:
+  - make init
+
+script:
+  - make test

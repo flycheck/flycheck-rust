@@ -150,7 +150,21 @@ description of the conventional Cargo project layout."
                                             (file-name-directory manifest)))))
             ;; If all else fails, just pick the first target
             (car targets))))
-      (let-alist target (cons (flycheck-rust-normalize-target-kind .kind) .name)))))
+      (let-alist target
+        ;; If target is 'custom-build', we search other target
+        (if (string= "custom-build" (car .kind))
+            (--> targets
+                 (-filter
+                  (lambda (target)
+                    (let-alist target
+                      (string-prefix-p
+                       (expand-file-name
+                        "src"
+                        (file-name-directory file-name))
+                       .src_path))) it)
+                 (car it)
+                 (let-alist it (cons (car .kind) .name)))
+          (cons (flycheck-rust-normalize-target-kind .kind) .name))))))
 
 (defun flycheck-rust-normalize-target-kind (kinds)
   "Return the normalized target name from KIND.

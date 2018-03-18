@@ -1,0 +1,9 @@
+[package]
+name = "build-script-test"
+version = "0.1.0"
+authors = ["kngwyu <yuji.kngw.80s.revive@gmail.com>"]
+
+[dependencies]
+
+[workspace]
+members = ["lib-test"]

@@ -15,7 +15,7 @@ As usual, from [MELPA][] or [MELPA Stable][].
 
 In your [`Cask`][cask] file:
 
-```cl
+```emacs-lisp
 (source gnu)
 (source melpa)
 
@@ -24,8 +24,9 @@ In your [`Cask`][cask] file:
 
 In your `init.el`:
 
-```cl
-(add-hook 'flycheck-mode-hook #'flycheck-rust-setup)
+```emacs-lisp
+(with-eval-after-load 'rust-mode
+  (add-hook 'flycheck-mode-hook #'flycheck-rust-setup))
 ```
 
 Usage

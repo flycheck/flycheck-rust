@@ -151,7 +151,7 @@ description of the conventional Cargo project layout."
             ;; If all else fails, just pick the first target
             (car (car targets)))))
       (let-alist target
-        If target is 'custom-build', we search other target
+        ;; If target is 'custom-build', we search other target
         (if (string= "custom-build" (car .kind))
             (--> targets
                  ;; filtering same packages as current buffer

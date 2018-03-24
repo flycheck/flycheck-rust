@@ -107,7 +107,7 @@ more information on setting your PATH with Emacs."))
                                (let ((json-array-type 'list))
                                  (json-read)))
                            .packages))
-      (seq-mapcat (lambda (pkg)
+      (seq-map (lambda (pkg)
                     (let-alist pkg .targets))
                   packages))))
 
@@ -134,7 +134,7 @@ description of the conventional Cargo project layout."
             ;; that one
             (seq-find (lambda (target)
                         (let-alist target (string= file-name .src_path)))
-                      targets)
+                      (-flatten-n 1 targets))
             ;; Otherwise find the closest matching target by walking up the tree
             ;; from FILE-NAME and looking for targets in each directory.  E.g.,
             ;; the file 'tests/common/a.rs' will look for a target in
@@ -145,25 +145,24 @@ description of the conventional Cargo project layout."
                       (file-equal-p dir (file-name-directory target-path))))
                   ;; build a list of (target . dir) candidates
                   (-table-flat
-                   'cons targets
+                   'cons (-flatten-n 1 targets)
                    (flycheck-rust-dirs-list file-name
                                             (file-name-directory manifest)))))
             ;; If all else fails, just pick the first target
-            (car targets))))
+            (car (car targets)))))
       (let-alist target
-        ;; If target is 'custom-build', we search other target
+        If target is 'custom-build', we search other target
         (if (string= "custom-build" (car .kind))
             (--> targets
-                 (-filter
-                  (lambda (target)
-                    (let-alist target
-                      (string-prefix-p
-                       (expand-file-name
-                        "src"
-                        (file-name-directory file-name))
-                       .src_path))) it)
-                 (car it)
-                 (let-alist it (cons (car .kind) .name)))
+                 ;; filtering same packages as current buffer
+                 (--filter
+                  (--any?
+                   (let-alist it
+                     (string= file-name .src_path)) it) it)
+                 (--remove
+                  (let-alist it
+                    (string= "custom-build" (car .kind))) (car it))
+                 (let-alist (car it) (cons (car .kind) .name)))
           (cons (flycheck-rust-normalize-target-kind .kind) .name))))))
 
 (defun flycheck-rust-normalize-target-kind (kinds)

@@ -41,6 +41,9 @@
 (defun lib-crate-file (file-name)
   (expand-file-name file-name "tests/custom-lib-target"))
 
+(defun build-script-crate-file (file-name)
+  (expand-file-name file-name "tests/build-script-test"))
+
 (describe
  "`flycheck-rust-find-cargo-target' associates"
 
@@ -118,4 +121,14 @@
      (expect
       (car (flycheck-rust-find-cargo-target (lib-crate-file "src/lib.rs")))
       :to-equal "lib"))
+
+ (it "'build.rs' to any target in the same workspace member (parent)"
+     (expect
+      (flycheck-rust-find-cargo-target (build-script-crate-file "build.rs"))
+      :to-equal (cons "bin" "build-script-test")))
+
+ (it "'build.rs' to any target in the same workspace member (child)"
+     (expect
+      (flycheck-rust-find-cargo-target (build-script-crate-file "lib-test/build.rs"))
+      :to-equal (cons "lib" "lib-test")))
  )

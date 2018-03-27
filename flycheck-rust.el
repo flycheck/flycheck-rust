@@ -127,14 +127,15 @@ the closest matching target, or nil if no targets could be found.
 See http://doc.crates.io/manifest.html#the-project-layout for a
 description of the conventional Cargo project layout."
   (-when-let* ((manifest (flycheck-rust-find-manifest file-name))
-               (targets (flycheck-rust-get-cargo-targets manifest)))
+               (packages (flycheck-rust-get-cargo-targets manifest))
+               (targets (-flatten-n 1 packages)))
     (let ((target
            (or
             ;; If there is a target that matches the file-name exactly, pick
             ;; that one
             (seq-find (lambda (target)
                         (let-alist target (string= file-name .src_path)))
-                      (-flatten-n 1 targets))
+                      targets)
             ;; Otherwise find the closest matching target by walking up the tree
             ;; from FILE-NAME and looking for targets in each directory.  E.g.,
             ;; the file 'tests/common/a.rs' will look for a target in
@@ -145,25 +146,21 @@ description of the conventional Cargo project layout."
                       (file-equal-p dir (file-name-directory target-path))))
                   ;; build a list of (target . dir) candidates
                   (-table-flat
-                   'cons (-flatten-n 1 targets)
+                   'cons targets
                    (flycheck-rust-dirs-list file-name
                                             (file-name-directory manifest)))))
             ;; If all else fails, just pick the first target
-            (car (car targets)))))
-      (let-alist target
-        ;; If target is 'custom-build', we search other target
-        (if (string= "custom-build" (car .kind))
-            (--> targets
-                 ;; filtering same packages as current buffer
-                 (--filter
-                  (--any?
-                   (let-alist it
-                     (string= file-name .src_path)) it) it)
-                 (--remove
-                  (let-alist it
-                    (string= "custom-build" (car .kind))) (car it))
-                 (let-alist (car it) (cons (car .kind) .name)))
+            (car targets))))
+      ;; If target is 'custom-build', we pick another target from the same package (see GH-62)
+      (when (string= "custom-build" (let-alist target (car .kind)))
+        (setq target (->> packages
+                          ;; find the same package as current build-script buffer
+                          (--find (--any? (equal target it) it))
+                          (--find (not (equal target it))))))
+      (when target
+        (let-alist target
           (cons (flycheck-rust-normalize-target-kind .kind) .name))))))
+
 
 (defun flycheck-rust-normalize-target-kind (kinds)
   "Return the normalized target name from KIND.

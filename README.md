@@ -1,19 +1,19 @@
 flycheck-rust — Flycheck for Rust
 =================================
 
-[![Build Status](https://travis-ci.org/flycheck/flycheck-rust.svg?branch=master)](https://travis-ci.org/flycheck/flycheck-rust)
+[![Build Status][travis-badge]][travis-url]
 [![License GPL 3][badge-license]][copying]
+[![MELPA][MELPA-badge]][MELPA-link]
 
-Configure [Flycheck][] for Rust.
+This Flycheck extension configures Flycheck automatically for the current
+Cargo project.
 
-- Setup Flycheck to follow the Cargo project layout.
+Setup
+-----
 
-Installation
-------------
+Install from [MELPA][] or [MELPA Stable][].
 
-As usual, from [MELPA][] or [MELPA Stable][].
-
-In your [`Cask`][cask] file:
+If you use [`Cask`][cask]:
 
 ```emacs-lisp
 (source gnu)
@@ -22,7 +22,7 @@ In your [`Cask`][cask] file:
 (depends-on "flycheck-rust")
 ```
 
-In your `init.el`:
+Then, in your `init.el`:
 
 ```emacs-lisp
 (with-eval-after-load 'rust-mode
@@ -32,7 +32,12 @@ In your `init.el`:
 Usage
 -----
 
-Just use Flycheck as usual in your Rust/Cargo projects.
+Just use Flycheck as usual in your Rust/Cargo projects.  `flycheck-rust-setup`
+will call `cargo` to determine your project layout and set the variables needed
+by the `rust-cargo` checker to properly check your buffer.
+
+You may also want to have a look at [flycheck/flycheck-inline][flycheck-inline],
+which works well with diagnostics emitted by Rust.
 
 License
 -------
@@ -57,3 +62,8 @@ See [`COPYING`][copying] for details.
 [Cask]: https://github.com/cask/cask
 [MELPA]: http://melpa.milkbox.net
 [MELPA Stable]: http://melpa-stable.milkbox.net
+[MELPA-badge]: http://melpa.org/packages/flycheck-rust-badge.svg
+[MELPA-link]: http://melpa.org/#/flycheck-rust
+[flycheck-inline]: https://github.com/flycheck/flycheck-inline
+[travis-badge]: https://travis-ci.org/flycheck/flycheck-rust.svg?branch=master
+[travis-url]: https://travis-ci.org/flycheck/flycheck-rust

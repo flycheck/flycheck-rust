@@ -1,0 +1,17 @@
+[package]
+name = "test-crate-with-features"
+version = "0.1.0"
+
+[features]
+fea1 = []
+fea2 = []
+
+[[bin]]
+name = "main"
+path = "src/main.rs"
+required-features = ["fea1"]
+
+[[example]]
+name = "example"
+path = "example/example.rs"
+required-features = ["fea1", "fea2"]

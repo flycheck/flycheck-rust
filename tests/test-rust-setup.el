@@ -38,97 +38,141 @@
 (defun crate-file (file-name)
   (expand-file-name file-name "tests/test-crate"))
 
+(defun crate-with-features-file (file-name)
+  (expand-file-name file-name "tests/crate-with-features"))
+
 (defun lib-crate-file (file-name)
   (expand-file-name file-name "tests/custom-lib-target"))
 
 (defun build-script-crate-file (file-name)
   (expand-file-name file-name "tests/build-script-test"))
 
+(defun cdrassoc (sym alist) (cdr (assoc sym alist)))
+
+(defun get-cargo-version ()
+  (let ((cargo (funcall flycheck-executable-find "cargo")))
+    (with-output-to-string
+      (call-process cargo nil standard-output nil "--version"))))
+
+(defun cargo-version ()
+  (pcase-let
+      ((`(,ignored1 ,version ,ignored2) (split-string (get-cargo-version))))
+    (split-string version "-")))
+
+(defun cargo-older-than-1.29-nightly ()
+  (pcase-let ((`(,version ,channel) (cargo-version)))
+    (or (version< version "1.29")
+        (and (version= version "1.29") (string= channel "beta")))))
+
 (describe
  "`flycheck-rust-find-cargo-target' associates"
 
  (it "'src/lib.rs' to the library target"
      (expect
-      (car (flycheck-rust-find-cargo-target (crate-file "src/lib.rs")))
+      (cdrassoc 'kind (flycheck-rust-find-cargo-target (crate-file "src/lib.rs")))
       :to-equal "lib"))
 
  (it "'src/a.rs' to the library target"
      (expect
-      (car (flycheck-rust-find-cargo-target (crate-file "src/a.rs")))
+      (cdrassoc 'kind (flycheck-rust-find-cargo-target (crate-file "src/a.rs")))
       :to-equal "lib"))
 
  (it "'src/main.rs' to the main binary target"
      (expect
       (flycheck-rust-find-cargo-target (crate-file "src/main.rs"))
-      :to-equal '("bin" . "test-crate")))
+      :to-equal '((kind . "bin") (name . "test-crate"))))
 
  (it "'src/bin/a.rs' to the 'a' binary target"
      (expect
       (flycheck-rust-find-cargo-target (crate-file "src/bin/a.rs"))
-      :to-equal '("bin" . "a")))
+      :to-equal '((kind . "bin") (name . "a"))))
 
  (it "'src/bin/b.rs' to the 'b' binary target"
      (expect
       (flycheck-rust-find-cargo-target (crate-file "src/bin/b.rs"))
-      :to-equal '("bin" . "b")))
+      :to-equal '((kind . "bin") (name . "b"))))
 
  (it "'src/bin/support/mod.rs' to any binary target"
      (expect
       (flycheck-rust-find-cargo-target (crate-file "src/bin/support/mod.rs"))
-      :to-equal-one-of '("bin". "a") '("bin". "b")))
+      :to-equal-one-of
+      '((kind . "bin") (name . "a"))
+      '((kind . "bin") (name . "b"))))
 
  (it "'tests/a.rs' to the 'a' test target"
      (expect
       (flycheck-rust-find-cargo-target (crate-file "tests/a.rs"))
-      :to-equal '("test" . "a")))
+      :to-equal '((kind . "test") (name . "a"))))
 
  (it "'tests/support/mod.rs' to any test target"
      (expect
       (flycheck-rust-find-cargo-target (crate-file "tests/support/mod.rs"))
-      :to-equal-one-of '("test". "a") '("test". "b")))
+      :to-equal-one-of
+      '((kind . "test") (name . "a"))
+      '((kind . "test") (name . "b"))))
 
  (it "'examples/a.rs' to the 'a' example target"
      (expect
       (flycheck-rust-find-cargo-target (crate-file "examples/a.rs"))
-      :to-equal '("example" . "a")))
+      :to-equal '((kind . "example") (name . "a"))))
 
  (it "'examples/b.rs' to the 'b' example target"
      (expect
       (flycheck-rust-find-cargo-target (crate-file "examples/b.rs"))
-      :to-equal '("example" . "b")))
+      :to-equal '((kind . "example") (name . "b"))))
 
  (it "'examples/support/mod.rs' to any example target"
      (expect
       (flycheck-rust-find-cargo-target (crate-file "examples/support/mod.rs"))
-      :to-equal-one-of '("example" . "a") '("example" . "b")))
+      :to-equal-one-of
+      '((kind . "example") (name . "a"))
+      '((kind . "example") (name . "b"))))
 
  (it "'benches/a.rs' to the 'a' bench target"
      (expect
       (flycheck-rust-find-cargo-target (crate-file "benches/a.rs"))
-      :to-equal '("bench" . "a")))
+      :to-equal '((kind . "bench") (name . "a"))))
 
  (it "'benches/b.rs' to the 'b' bench target"
      (expect
       (flycheck-rust-find-cargo-target (crate-file "benches/b.rs"))
-      :to-equal '("bench" . "b")))
+      :to-equal '((kind . "bench") (name . "b"))))
 
  (it "'benches/support/mod.rs' to any bench target"
      (expect
       (flycheck-rust-find-cargo-target (crate-file "benches/support/mod.rs"))
-      :to-equal-one-of '("bench" . "a") '("bench" . "b")))
+      :to-equal-one-of
+      '((kind . "bench") (name . "a"))
+      '((kind . "bench") (name . "b"))))
 
  (it "'src/lib.rs' to the library target (custom-lib-target)"
      (expect
       (car (flycheck-rust-find-cargo-target (lib-crate-file "src/lib.rs")))
-      :to-equal "lib"))
+      :to-equal '(kind . "lib")))
 
  (it "'build.rs' to any target in the same workspace member (parent)"
      (expect
       (flycheck-rust-find-cargo-target (build-script-crate-file "build.rs"))
-      :to-equal (cons "bin" "build-script-test")))
+      :to-equal '((kind . "bin") (name . "build-script-test"))))
 
  (it "'build.rs' to any target in the same workspace member (child)"
      (expect
       (flycheck-rust-find-cargo-target (build-script-crate-file "lib-test/build.rs"))
-      :to-equal (cons "lib" "lib-test")))
+      :to-equal '((kind . "lib") (name . "lib-test"))))
+
+ (it "'src/main.rs' to the bin target with required-features (fea1)"
+     (when (cargo-older-than-1.29-nightly)
+         (signal 'buttercup-pending "requires cargo 1.29"))
+     (expect
+      (flycheck-rust-find-cargo-target (crate-with-features-file "src/main.rs"))
+      :to-equal '((kind . "bin") (name . "main") (required-features . ("fea1")))))
+
+ (it "'example/example.rs' to the example target with required-features (fea1 fea2)"
+     (when (cargo-older-than-1.29-nightly)
+         (signal 'buttercup-pending "requires cargo 1.29"))
+     (expect
+      (flycheck-rust-find-cargo-target (crate-with-features-file "example/example.rs"))
+      :to-equal '((kind . "example")
+                  (name . "example")
+                  (required-features . ("fea1" "fea2")))))
  )

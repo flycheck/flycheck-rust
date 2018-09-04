@@ -119,10 +119,11 @@ FILE-NAME is the path of the file that is matched against the
 `src_path' value in the list of `targets' returned by `cargo
 read-manifest'.
 
-Return a cons cell (KIND . NAME) where KIND is the target
-kind (lib, bin, test, example or bench), and NAME the target
-name (usually, the crate name).  If FILE-NAME exactly matches a
-target `src-path', this target is returned.  Otherwise, return
+Return an alist ((KIND . k) (NAME . n) (REQUIRED-FEATURES . rf))
+where KIND is the target kind (lib, bin, test, example or bench),
+NAME the target name (usually, the crate name), and REQUIRED-FEATURES is the
+optional list of features required to build the selected target.  If FILE-NAME
+exactly matches a target `src-path', this target is returned.  Otherwise, return
 the closest matching target, or nil if no targets could be found.
 
 See http://doc.crates.io/manifest.html#the-project-layout for a
@@ -160,7 +161,10 @@ description of the conventional Cargo project layout."
                           (--find (not (equal target it))))))
       (when target
         (let-alist target
-          (cons (flycheck-rust-normalize-target-kind .kind) .name))))))
+          (seq-filter (lambda (kv) (cdr kv))
+                     (list (cons 'kind (flycheck-rust-normalize-target-kind .kind))
+                           (cons 'name .name)
+                           (cons 'required-features .required-features))))))))
 
 
 (defun flycheck-rust-normalize-target-kind (kinds)
@@ -194,9 +198,11 @@ Flycheck according to the Cargo project layout."
   ;; https://github.com/flycheck/flycheck-rust/issues/40#issuecomment-253760883).
   (with-demoted-errors "Error in flycheck-rust-setup: %S"
     (-when-let* ((file-name (buffer-file-name))
-                 ((kind . name) (flycheck-rust-find-cargo-target file-name)))
-      (setq-local flycheck-rust-crate-type kind)
-      (setq-local flycheck-rust-binary-name name))))
+                 (target (flycheck-rust-find-cargo-target file-name)))
+      (let-alist target
+        (setq-local flycheck-rust-features .required-features)
+        (setq-local flycheck-rust-crate-type .kind)
+        (setq-local flycheck-rust-binary-name .name)))))
 
 (provide 'flycheck-rust)
 

@@ -1,0 +1,24 @@
+# Adding this stage is a workaround because `COPY --from` does not support
+# variable substitution.
+# See https://github.com/moby/moby/issues/34482
+ARG EMACS_VERSION=27.1
+FROM flycheck/emacs-cask:${EMACS_VERSION} AS emacs-cask
+
+# We need gnutls for downloading packages from ELPA
+RUN apt-get -qq update && \
+    apt-get install -qq --no-install-recommends -y \
+            curl \
+            gnutls-bin \
+            make \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Rust
+ARG RUST_VERSION=stable
+ENV RUSTUP_HOME /usr/local/rustup
+ENV CARGO_HOME  /usr/local/cargo
+ENV PATH        $CARGO_HOME/bin:$PATH
+RUN curl --proto '=https' -tlsv1.2 -sSf "https://sh.rustup.rs" | sh -s -- --default-toolchain ${RUST_VERSION} -y \
+# Cargo needs to update its index otherwise tests will timeout
+# There's a `-Z offline` flag, but nightly only.
+# See https://github.com/rust-lang/cargo/issues/4686
+    && cargo search --quiet

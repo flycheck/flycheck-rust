@@ -1,0 +1,26 @@
+name: Run tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        emacs-version: [26.3, 27.1, master]
+        rust-version: [stable, beta, nightly]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build test Docker image
+        run: |
+          docker build --build-arg EMACS_VERSION=${{ matrix.emacs-version }} \
+                       --build-arg RUST_VERSION=${{ matrix.rust-version }} \
+                       --tag emacs-cask-rust \
+                       --file .github/emacs-cask-rust .
+
+      - name: Run test
+        run: |
+          docker run --volume `pwd`:/flycheck-rust \
+                    --workdir /flycheck-rust \
+                    emacs-cask-rust \
+                    /bin/bash -c "make init && make test"

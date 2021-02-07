@@ -3,7 +3,8 @@ flycheck-rust — Flycheck for Rust
 
 [![Build Status][travis-badge]][travis-url]
 [![License GPL 3][badge-license]][copying]
-[![MELPA][MELPA-badge]][MELPA-link]
+[![MELPA](https://melpa.org/packages/flycheck-rust-badge.svg)](https://melpa.org/#/flycheck-rust)
+[![MELPA Stable](https://stable.melpa.org/packages/flycheck-rust-badge.svg)](https://stable.melpa.org/#/flycheck-rust)
 
 This Flycheck extension configures Flycheck automatically for the current
 Cargo project.

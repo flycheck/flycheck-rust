@@ -1,4 +1,5 @@
 # Copyright (c) 2016 fmdkdd
+# Copyright (c) 2024 Jen-Chieh Shen
 
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -13,13 +14,35 @@
 # You should have received a copy of the GNU General Public License along with
 # this program.  If not, see <http://www.gnu.org/licenses/>.
 
-CASK = cask
+EASK ?= eask
 
-.PHONY: init
-init:
-	$(CASK) install
-	$(CASK) update
+.PHONY: clean checkdoc lint package install compile test
 
-.PHONY: test
+ci: clean package install compile
+
+package:
+	@echo "Packaging..."
+	$(EASK) package
+
+install:
+	@echo "Installing..."
+	$(EASK) install
+
+compile:
+	@echo "Compiling..."
+	$(EASK) compile
+
 test:
-	$(CASK) exec buttercup -L .
+	@echo "Testing..."
+	$(EASK) test ert ./test/*.el
+
+checkdoc:
+	@echo "Run checkdoc..."
+	$(EASK) lint checkdoc
+
+lint:
+	@echo "Run package-lint..."
+	$(EASK) lint package
+
+clean:
+	$(EASK) clean all

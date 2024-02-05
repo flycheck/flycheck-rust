@@ -1,23 +1,23 @@
-flycheck-rust — Flycheck for Rust
-=================================
-
-[![Build Status][travis-badge]][travis-url]
 [![License GPL 3][badge-license]][copying]
 [![MELPA][MELPA-badge]][MELPA-link]
+[![MELPA][MELPA-Stable-badge]][MELPA-Stable-link]
+
+# flycheck-rust — Flycheck for Rust
+
+[![CI](https://github.com/flycheck/flycheck-rust/actions/workflows/test.yml/badge.svg)](https://github.com/flycheck/flycheck-rust/actions/workflows/test.yml)
 
 This Flycheck extension configures Flycheck automatically for the current
 Cargo project.
 
-Setup
------
+## Setup
 
 Install from [MELPA][] or [MELPA Stable][].
 
-If you use [`Cask`][cask]:
+If you use [`Eask`][Eask]:
 
 ```emacs-lisp
-(source gnu)
-(source melpa)
+(source 'gnu)
+(source 'melpa)
 
 (depends-on "flycheck-rust")
 ```
@@ -29,8 +29,7 @@ Then, in your `init.el`:
   (add-hook 'flycheck-mode-hook #'flycheck-rust-setup))
 ```
 
-Usage
------
+## Usage
 
 Just use Flycheck as usual in your Rust/Cargo projects.  `flycheck-rust-setup`
 will call `cargo` to determine your project layout and set the variables needed
@@ -39,8 +38,7 @@ by the `rust-cargo` checker to properly check your buffer.
 You may also want to have a look at [flycheck/flycheck-inline][flycheck-inline],
 which works well with diagnostics emitted by Rust.
 
-License
--------
+## License
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -56,14 +54,20 @@ this program.  If not, see http://www.gnu.org/licenses/.
 
 See [`COPYING`][copying] for details.
 
+
+<!-- Links -->
+
 [badge-license]: https://img.shields.io/badge/license-GPL_3-green.svg?dummy
 [COPYING]: https://github.com/flycheck/flycheck-rust/blob/master/COPYING
 [Flycheck]: https://github.com/flycheck/flycheck
 [Cask]: https://github.com/cask/cask
+[Eask]: https://github.com/emacs-eask/cli
 [MELPA]: http://melpa.milkbox.net
 [MELPA Stable]: http://melpa-stable.milkbox.net
 [MELPA-badge]: http://melpa.org/packages/flycheck-rust-badge.svg
 [MELPA-link]: http://melpa.org/#/flycheck-rust
+[MELPA-Stable-badge]: https://stable.melpa.org/packages/flycheck-rust-badge.svg
+[MELPA-Stable-link]: https://stable.melpa.org/#/flycheck-rust
 [flycheck-inline]: https://github.com/flycheck/flycheck-inline
 [travis-badge]: https://travis-ci.org/flycheck/flycheck-rust.svg?branch=master
 [travis-url]: https://travis-ci.org/flycheck/flycheck-rust

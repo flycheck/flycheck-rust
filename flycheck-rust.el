@@ -2,6 +2,7 @@
 
 ;; Copyright (C) 2016, 2017  fmdkdd
 ;; Copyright (C) 2014, 2015  Sebastian Wiesner <swiesner@lunaryorn.com>
+;; Copyright (C) 2024-2025  Shen, Jen-Chieh
 
 ;; Author: Sebastian Wiesner <swiesner@lunaryorn.com>
 ;; URL: https://github.com/flycheck/flycheck-rust

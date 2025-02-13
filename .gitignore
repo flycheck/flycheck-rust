@@ -11,3 +11,6 @@
 
 # Directory local variables
 .dir-locals.el
+
+# OS generated
+.DS_Store

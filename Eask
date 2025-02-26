@@ -12,11 +12,11 @@
 (source 'gnu)
 (source 'melpa)
 
-(depends-on "emacs" "24.1")
-(depends-on "flycheck" "28")
-(depends-on "dash" "2.13.0")
-(depends-on "seq" "2.3")
-(depends-on "let-alist" "1.0.4")
+(depends-on "emacs" "27.1")
+(depends-on "flycheck")
+(depends-on "dash")
+(depends-on "seq")
+(depends-on "let-alist")
 
 (development
  (depends-on "buttercup")  ; BDD test framework for Emacs

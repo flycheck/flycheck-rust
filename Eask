@@ -1,3 +1,5 @@
+;; -*- mode: eask; lexical-binding: t -*-
+
 (package "flycheck-rust"
          "1.1"
          "Flycheck: Rust additions and Cargo support")
